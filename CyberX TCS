@@ -1,0 +1,570 @@
+-- CyberX Hub | By CyberX Store
+-- Tabs horizontais no topo, painel 350x250, tema verde escuro.
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+
+local SCRIPT_VERSION = "2.0-clean"
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local old = playerGui:FindFirstChild("CyberXHub")
+if old then old:Destroy() end
+local oldBahia = playerGui:FindFirstChild("BahiaHub")
+if oldBahia then oldBahia:Destroy() end
+
+-- TEMA VERDE ESCURO
+local GREEN_MAIN = Color3.fromRGB(60, 200, 110)
+local GREEN_DARK = Color3.fromRGB(20, 70, 40)
+local GREEN_DEEP = Color3.fromRGB(10, 38, 22)
+local BG = Color3.fromRGB(8, 26, 15)
+local PANEL = Color3.fromRGB(18, 50, 30)
+local TEXT = Color3.fromRGB(235, 250, 240)
+local MUTED = Color3.fromRGB(150, 185, 165)
+local GREEN = Color3.fromRGB(90, 225, 145)
+
+local DISCORD_LINK = "https://discord.gg/CM6bsyQBUp"
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "CyberXHub"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = playerGui
+
+local function corner(obj, radius)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, radius or 10)
+    c.Parent = obj
+    return c
+end
+
+local function stroke(obj, color, thickness)
+    local s = Instance.new("UIStroke")
+    s.Color = color or GREEN_DARK
+    s.Thickness = thickness or 1
+    s.Parent = obj
+    return s
+end
+
+local function makeLabel(parent, text, size, pos, fontSize, color, bold)
+    local label = Instance.new("TextLabel")
+    label.BackgroundTransparency = 1
+    label.Parent = parent
+    label.Text = text
+    label.Size = size
+    label.Position = pos
+    label.Font = bold and Enum.Font.GothamBold or Enum.Font.Gotham
+    label.TextSize = fontSize or 12
+    label.TextColor3 = color or TEXT
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextWrapped = true
+    return label
+end
+
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.Parent = gui
+main.Size = UDim2.new(0, 350, 0, 250)
+main.Position = UDim2.new(0.5, -175, 0.5, -125)
+main.BackgroundColor3 = BG
+main.Visible = true
+main.Active = true
+corner(main, 14)
+stroke(main, GREEN_MAIN, 1.5)
+
+local header = Instance.new("Frame")
+header.Parent = main
+header.Size = UDim2.new(1, 0, 0, 52)
+header.BackgroundColor3 = PANEL
+corner(header, 14)
+
+makeLabel(header, "CyberX Hub", UDim2.new(1, -65, 0, 22), UDim2.new(0, 14, 0, 7), 16, TEXT, true)
+makeLabel(header, "By CyberX Store", UDim2.new(1, -65, 0, 16), UDim2.new(0, 15, 0, 29), 9, GREEN_MAIN, true)
+
+local close = Instance.new("TextButton")
+close.Parent = header
+close.Size = UDim2.new(0, 26, 0, 26)
+close.Position = UDim2.new(1, -36, 0, 13)
+close.BackgroundColor3 = GREEN_DEEP
+close.Text = "×"
+close.TextColor3 = TEXT
+close.TextSize = 18
+close.Font = Enum.Font.GothamBold
+close.AutoButtonColor = false
+corner(close, 7)
+close.MouseButton1Click:Connect(function() main.Visible = false end)
+
+local tabsBar = Instance.new("Frame")
+tabsBar.Parent = main
+tabsBar.BackgroundTransparency = 1
+tabsBar.Position = UDim2.new(0, 10, 0, 58)
+tabsBar.Size = UDim2.new(1, -20, 0, 30)
+local tabsLayout = Instance.new("UIListLayout")
+tabsLayout.Parent = tabsBar
+tabsLayout.FillDirection = Enum.FillDirection.Horizontal
+tabsLayout.Padding = UDim.new(0, 5)
+tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+tabsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local content = Instance.new("Frame")
+content.Parent = main
+content.BackgroundTransparency = 1
+content.Position = UDim2.new(0, 10, 0, 94)
+content.Size = UDim2.new(1, -20, 1, -104)
+
+local tabs = {"Auto Follow", "Reach", "Gramado", "Anti-Lag", "Discord"}
+local pages, tabButtons = {}, {}
+local currentTab = nil
+
+local function newPage(name)
+    local page = Instance.new("ScrollingFrame")
+    page.Name = name
+    page.Parent = content
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.BackgroundTransparency = 1
+    page.BorderSizePixel = 0
+    page.ScrollBarThickness = 3
+    page.ScrollBarImageColor3 = GREEN_MAIN
+    page.CanvasSize = UDim2.new(0, 0, 0, 0)
+    page.Visible = false
+    local layout = Instance.new("UIListLayout")
+    layout.Parent = page
+    layout.Padding = UDim.new(0, 6)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        page.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 6)
+    end)
+    pages[name] = page
+    return page
+end
+
+for i, name in ipairs(tabs) do
+    local btn = Instance.new("TextButton")
+    btn.Parent = tabsBar
+    btn.Size = UDim2.new(0, 60, 1, 0)
+    btn.BackgroundColor3 = PANEL
+    btn.Text = name
+    btn.TextColor3 = MUTED
+    btn.TextSize = 9
+    btn.Font = Enum.Font.GothamMedium
+    btn.AutoButtonColor = false
+    btn.LayoutOrder = i
+    corner(btn, 7)
+    tabButtons[name] = btn
+    newPage(name)
+end
+
+local function showTab(name)
+    currentTab = name
+    for tabName, page in pairs(pages) do
+        page.Visible = tabName == name
+        tabButtons[tabName].BackgroundColor3 = tabName == name and GREEN_DARK or PANEL
+        tabButtons[tabName].TextColor3 = tabName == name and TEXT or MUTED
+    end
+end
+
+for _, name in ipairs(tabs) do
+    tabButtons[name].MouseButton1Click:Connect(function() showTab(name) end)
+end
+
+local function addButton(pageName, title, callback, description)
+    local wrap = Instance.new("Frame")
+    wrap.Parent = pages[pageName]
+    wrap.Size = UDim2.new(1, -5, 0, description and 52 or 38)
+    wrap.BackgroundColor3 = PANEL
+    corner(wrap, 8)
+    stroke(wrap, GREEN_DEEP, 1)
+
+    local btn = Instance.new("TextButton")
+    btn.Parent = wrap
+    btn.Position = UDim2.new(0, 8, 0, 4)
+    btn.Size = UDim2.new(1, -16, 0, description and 24 or 30)
+    btn.BackgroundColor3 = GREEN_DEEP
+    btn.Text = title
+    btn.TextColor3 = TEXT
+    btn.TextSize = 10
+    btn.Font = Enum.Font.GothamMedium
+    btn.AutoButtonColor = false
+    corner(btn, 6)
+
+    if description then
+        makeLabel(wrap, description, UDim2.new(1, -16, 0, 16), UDim2.new(0, 8, 0, 31), 9, MUTED, false)
+    end
+
+    btn.MouseButton1Click:Connect(function()
+        local ok, message = pcall(function() callback(btn) end)
+        if not ok then
+            btn.Text = "Erro ao aplicar opção"
+            warn("[CyberX Hub] " .. tostring(message))
+        end
+    end)
+    return btn
+end
+
+local function setStatus(btn, label, enabled)
+    btn.Text = label .. (enabled and ": ON" or ": OFF")
+    btn.BackgroundColor3 = enabled and Color3.fromRGB(30, 90, 55) or GREEN_DEEP
+    btn.TextColor3 = enabled and GREEN or TEXT
+end
+
+-- AUTO FOLLOW
+local followEnabled = false
+local followDistance = 1.8
+local targetCenter = Vector3.new(0, -28.94, 0)
+local centerTolerance = 3.5
+local character, humanoid, rootPart
+
+local function updateCharacter(char)
+    character = char
+    humanoid = char:WaitForChild("Humanoid")
+    rootPart = char:WaitForChild("HumanoidRootPart")
+end
+
+if player.Character then
+    task.spawn(updateCharacter, player.Character)
+end
+player.CharacterAdded:Connect(updateCharacter)
+
+local function getClosestFollowBall()
+    if not rootPart or not rootPart.Parent then return nil end
+    local closestBall, shortestDistance = nil, math.huge
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and
+            (obj.Name == "TPS" or obj.Name:lower():find("ball") or obj.Name:lower():find("bola")) then
+            local size = obj.Size
+            local correctSize = size.X >= 0.8 and size.X <= 5
+            local atCenter = (obj.Position - targetCenter).Magnitude <= centerTolerance
+            if correctSize and not atCenter then
+                local distance = (obj.Position - rootPart.Position).Magnitude
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    closestBall = obj
+                end
+            end
+        end
+    end
+    return closestBall
+end
+
+local function isManualMoving()
+    local keyMovement =
+        UserInputService:IsKeyDown(Enum.KeyCode.W) or
+        UserInputService:IsKeyDown(Enum.KeyCode.A) or
+        UserInputService:IsKeyDown(Enum.KeyCode.S) or
+        UserInputService:IsKeyDown(Enum.KeyCode.D)
+    if keyMovement then return true end
+    return humanoid ~= nil and humanoid.MoveDirection.Magnitude > 0.05
+end
+
+local function isSkillPlaying()
+    if not humanoid then return false end
+    local animator = humanoid:FindFirstChildOfClass("Animator")
+    if not animator then return false end
+    for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+        local name = track.Name:lower()
+        if name:find("skill") or name:find("dribble") or name:find("fake")
+            or name:find("shoot") or name:find("head") or name:find("rainbow")
+            or name:find("lambreta") then
+            return true
+        end
+    end
+    return false
+end
+
+addButton("Auto Follow", "Auto Follow: OFF", function(btn)
+    followEnabled = not followEnabled
+    setStatus(btn, "Auto Follow", followEnabled)
+end, "Segue a bola mais próxima; movimento manual e habilidades têm prioridade.")
+
+local distanceButtons = {}
+local distanceOptions = {
+    {label = "Curta (1.5)", value = 1.5},
+    {label = "Média (1.8)", value = 1.8},
+    {label = "Longa (2.2)", value = 2.2},
+}
+
+local function refreshDistanceButtons()
+    for _, data in ipairs(distanceButtons) do
+        local selected = math.abs(followDistance - data.value) < 0.01
+        data.btn.Text = (selected and "✅ " or "") .. "Distância: " .. data.label
+        data.btn.BackgroundColor3 = selected and Color3.fromRGB(30, 90, 55) or GREEN_DEEP
+        data.btn.TextColor3 = selected and GREEN or TEXT
+    end
+end
+
+for _, opt in ipairs(distanceOptions) do
+    local btn = addButton("Auto Follow", "Distância: " .. opt.label, function(b)
+        followDistance = opt.value
+        refreshDistanceButtons()
+    end)
+    table.insert(distanceButtons, {btn = btn, value = opt.value, label = opt.label})
+end
+refreshDistanceButtons()
+
+RunService.RenderStepped:Connect(function()
+    if not followEnabled or not humanoid or not rootPart
+        or not rootPart.Parent or humanoid.Health <= 0 then
+        return
+    end
+    local ball = getClosestFollowBall()
+    if not ball or isManualMoving() or isSkillPlaying() then return end
+    local ballPos = ball.Position
+    local myPos = rootPart.Position
+    local targetPos = Vector3.new(ballPos.X, myPos.Y, ballPos.Z)
+    local delta = targetPos - myPos
+    local distance = delta.Magnitude
+    if distance > followDistance and distance > 0.01 then
+        humanoid:Move(delta.Unit, false)
+    else
+        humanoid:Move(Vector3.zero, false)
+    end
+end)
+
+-- REACH
+local reachEnabled = false
+local reachDistance = 3.5
+local reachButtons = {}
+
+local function getClosestReachBall()
+    if not rootPart or not rootPart.Parent then return nil end
+    local closest, best = nil, math.huge
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and (obj.Name == "TPS" or obj.Name == "TCS" or obj.Name == "TRS" or obj.Name == "PRS" or obj.Name == "MPS" or obj.Name:lower():find("ball") or obj.Name:lower():find("bola")) then
+            local d = (obj.Position - rootPart.Position).Magnitude
+            if d < best then closest, best = obj, d end
+        end
+    end
+    return closest
+end
+
+local function refreshReachButtons()
+    for _, data in ipairs(reachButtons) do
+        local selected = math.abs(reachDistance - data.value) < 0.01
+        data.btn.Text = (selected and "✅ " or "") .. "Alcance: " .. data.label
+        data.btn.BackgroundColor3 = selected and Color3.fromRGB(30, 90, 55) or GREEN_DEEP
+        data.btn.TextColor3 = selected and GREEN or TEXT
+    end
+end
+
+local reachToggleBtn = addButton("Reach", "Reach: OFF", function(btn)
+    reachEnabled = not reachEnabled
+    setStatus(btn, "Reach", reachEnabled)
+    if reachEnabled then
+        btn.Text = "Reach: ON (" .. reachDistance .. "m)"
+    end
+end, "Usa firetouchinterest para simular toque na bola.")
+
+for _, opt in ipairs({
+    {label = "2.0 Metros", value = 2},
+    {label = "3.5 Metros", value = 3.5},
+    {label = "5.0 Metros", value = 5},
+    {label = "7.5 Metros", value = 7.5},
+    {label = "10.0 Metros", value = 10},
+}) do
+    local btn = addButton("Reach", "Alcance: " .. opt.label, function(b)
+        reachDistance = opt.value
+        if reachEnabled then
+            reachToggleBtn.Text = "Reach: ON (" .. reachDistance .. "m)"
+        end
+        refreshReachButtons()
+    end)
+    table.insert(reachButtons, {btn = btn, value = opt.value, label = opt.label})
+end
+refreshReachButtons()
+
+RunService.RenderStepped:Connect(function()
+    if not reachEnabled or not humanoid or not rootPart
+        or not rootPart.Parent or humanoid.Health <= 0 then
+        return
+    end
+    local ball = getClosestReachBall()
+    if not ball then return end
+    local distance = (ball.Position - rootPart.Position).Magnitude
+    if distance <= reachDistance then
+        firetouchinterest(rootPart, ball, 0)
+        firetouchinterest(rootPart, ball, 1)
+        for _, part in ipairs(character:GetChildren()) do
+            if part:IsA("BasePart") then
+                firetouchinterest(part, ball, 0)
+                firetouchinterest(part, ball, 1)
+            end
+        end
+        for _, child in ipairs(ball:GetChildren()) do
+            if child:IsA("TouchTransmitter") then
+                firetouchinterest(rootPart, ball, 0)
+                firetouchinterest(rootPart, ball, 1)
+            end
+        end
+    end
+end)
+
+-- GRAMADO
+local originalColors = {}
+local groundButtons = {}
+local currentGroundColor = nil
+
+local function recolorGround(color)
+    for _, part in ipairs(Workspace:GetDescendants()) do
+        if part:IsA("BasePart") and part.Position.Y < 5 and part.Size.X > 8 and part.Size.Z > 8 then
+            if not originalColors[part] then originalColors[part] = {part.Color, part.Material} end
+            part.Color = color
+            part.Material = Enum.Material.SmoothPlastic
+        end
+    end
+end
+
+local function refreshGroundButtons()
+    for color, data in pairs(groundButtons) do
+        local selected = currentGroundColor == color
+        data.btn.Text = (selected and "✅ " or "") .. data.label
+        data.btn.BackgroundColor3 = selected and Color3.fromRGB(30, 90, 55) or GREEN_DEEP
+        data.btn.TextColor3 = selected and GREEN or TEXT
+    end
+end
+
+local groundOptions = {
+    {label = "Verde escuro", color = Color3.fromRGB(18, 78, 37)},
+    {label = "Preto", color = Color3.fromRGB(20, 18, 25)},
+    {label = "Roxo Cyber", color = Color3.fromRGB(78, 28, 120)},
+    {label = "Azul Midnight", color = Color3.fromRGB(18, 38, 88)},
+}
+
+for _, opt in ipairs(groundOptions) do
+    local btn = addButton("Gramado", opt.label, function(b)
+        recolorGround(opt.color)
+        currentGroundColor = opt.color
+        refreshGroundButtons()
+    end)
+    groundButtons[opt.color] = {btn = btn, label = opt.label}
+end
+
+addButton("Gramado", "Restaurar cores salvas", function(btn)
+    for part, values in pairs(originalColors) do
+        if part and part.Parent then
+            part.Color, part.Material = values[1], values[2]
+        end
+    end
+    originalColors = {}
+    currentGroundColor = nil
+    refreshGroundButtons()
+    btn.Text = "Restaurado"
+    task.delay(2, function()
+        if btn and btn.Parent then btn.Text = "Restaurar cores salvas" end
+    end)
+end)
+
+-- DISCORD (só copiar link, funcional)
+addButton("Discord", "Copiar link do servidor", function(btn)
+    local ok = pcall(function()
+        if setclipboard then
+            setclipboard(DISCORD_LINK)
+        else
+            local box = Instance.new("TextBox")
+            box.Text = DISCORD_LINK
+            box.Parent = gui
+            box.Visible = false
+            box:CaptureFocus()
+            box:ReleaseFocus()
+            box:Destroy()
+        end
+    end)
+    if ok then
+        btn.Text = "✅ Link copiado!"
+        btn.BackgroundColor3 = Color3.fromRGB(30, 90, 55)
+        btn.TextColor3 = GREEN
+    else
+        btn.Text = "Não foi possível copiar"
+    end
+    task.delay(2, function()
+        if btn and btn.Parent then
+            btn.Text = "Copiar link do servidor"
+            btn.BackgroundColor3 = GREEN_DEEP
+            btn.TextColor3 = TEXT
+        end
+    end)
+end, DISCORD_LINK)
+
+-- ANTI-LAG
+local oldSettings = {
+    GlobalShadows = Lighting.GlobalShadows,
+    FogEnd = Lighting.FogEnd,
+    Brightness = Lighting.Brightness
+}
+addButton("Anti-Lag", "Sombras: alternar", function(btn)
+    Lighting.GlobalShadows = not Lighting.GlobalShadows
+    btn.Text = Lighting.GlobalShadows and "Sombras: ON" or "Sombras: OFF"
+end, "Reduz um efeito gráfico local.")
+addButton("Anti-Lag", "Desativar neblina", function(btn)
+    Lighting.FogEnd = 1000000
+    btn.Text = "Neblina reduzida"
+end)
+local savedMaterials = {}
+addButton("Anti-Lag", "Texturas lisas", function(btn)
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and not (player.Character and obj:IsDescendantOf(player.Character)) then
+            if savedMaterials[obj] == nil then savedMaterials[obj] = obj.Material end
+            obj.Material = Enum.Material.SmoothPlastic
+        end
+    end
+    btn.Text = "Texturas lisas aplicadas"
+end, "Pode mudar a aparência de alguns objetos.")
+addButton("Anti-Lag", "Restaurar materiais", function(btn)
+    for part, material in pairs(savedMaterials) do
+        if part and part.Parent then part.Material = material end
+    end
+    savedMaterials = {}
+    btn.Text = "Materiais restaurados"
+end)
+addButton("Anti-Lag", "Restaurar iluminação inicial", function(btn)
+    Lighting.GlobalShadows = oldSettings.GlobalShadows
+    Lighting.FogEnd = oldSettings.FogEnd
+    Lighting.Brightness = oldSettings.Brightness
+    btn.Text = "Iluminação restaurada"
+end)
+
+-- BOTÃO FLUTUANTE
+local open = Instance.new("TextButton")
+open.Name = "OpenButton"
+open.Parent = gui
+open.Size = UDim2.new(0, 55, 0, 55)
+open.Position = UDim2.new(0, 18, 0.5, -27)
+open.BackgroundColor3 = BG
+open.Text = "CX"
+open.TextColor3 = GREEN
+open.TextSize = 18
+open.Font = Enum.Font.GothamBold
+open.AutoButtonColor = false
+corner(open, 8)
+stroke(open, GREEN_MAIN, 2)
+open.MouseButton1Click:Connect(function()
+    main.Visible = not main.Visible
+end)
+
+-- Arrastar
+local function makeDraggable(object, handle)
+    handle = handle or object
+    local dragging, startInput, startPos
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            startInput = input.Position
+            startPos = object.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - startInput
+            object.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+makeDraggable(main, header)
+makeDraggable(open)
+showTab("Auto Follow")
